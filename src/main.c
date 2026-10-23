@@ -1,6 +1,19 @@
+#define _GNU_SOURCE
 #include <arch/x86_64/timer/timer.h>
 
+#include <sched.h>
+
 #include <stdio.h>
+#include <unistd.h>
+
+int activate_cpu_affinity(void)
+{
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(7, &cpuset);
+
+    return sched_setaffinity(0, sizeof(cpuset), &cpuset);
+}
 
 void test_algorithm(void) { printf("Hello World\n"); }
 
@@ -10,6 +23,15 @@ int main(void)
     uint64_t         previous_time_calculation;
     rdtscp_results_t subsequent_time_calculation;
     uint64_t         result_diference;
+
+    if (activate_cpu_affinity() == -1) {
+        printf("CPU affinity activation failed.\n");
+        perror("sched_affinity");
+
+        ret = 1;
+    }
+
+    printf("CPU affinity activation successful: core 7\n");
 
     previous_time_calculation = start_timer_rdtsc();
 
