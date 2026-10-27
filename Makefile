@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Iinclude 
+CFLAGS := -O3 -mclflushopt -Iinclude 
 TARGET := tempest
 
 SRC := src/main.c

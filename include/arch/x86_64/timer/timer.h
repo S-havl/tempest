@@ -48,3 +48,31 @@ static inline __attribute__((always_inline)) rdtscp_results_t stop_timer_rdtscp(
 
     return results;
 }
+
+static inline __attribute__((always_inline)) void
+move_non_temporal_hint_movnti_instruction(uint64_t* memory_address, uint64_t value)
+{
+    __asm__ __volatile__("movntiq %[value], (%[memory_address])"
+                         :
+                         : [memory_address] "r"(memory_address), [value] "r"(value)
+                         : "memory");
+}
+
+static inline __attribute__((always_inline)) void
+cache_line_flush_optimized_clflushopt_instruction(const void* memory_address)
+{
+    __asm__ __volatile__("clflushopt (%[memory_address])"
+                         :
+                         : [memory_address] "r"(memory_address)
+                         : "memory");
+}
+
+static inline __attribute__((always_inline)) void store_fence_sfence_instruction(void)
+{
+    __asm__ __volatile__("sfence" : : : "memory");
+}
+
+static inline __attribute__((always_inline)) void load_fence_lfence_instruction(void)
+{
+    __asm__ __volatile__("lfence" : : : "memory");
+}
