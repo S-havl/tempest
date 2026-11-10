@@ -3,8 +3,11 @@
 
 #include <sched.h>
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <unistd.h>
+
+static uint64_t non_cached_write_variable __attribute__((aligned(64)));
 
 int activate_cpu_affinity(void)
 {
@@ -31,9 +34,9 @@ int main(void)
         ret = 1;
     }
 
-    printf("\033[H\033[38;2;0;255;0mCPU affinity activation successful: core 7\n\033[0m");
+    printf("\033[2J\033[H\033[38;2;0;255;0mCPU affinity activation successful: core 7\n\033[0m");
 
-    // timer test
+    // =============== TIMER TEST  ===============
     previous_time_calculation = start_timer_rdtsc();
 
     test_algorithm();
@@ -43,25 +46,34 @@ int main(void)
         subsequent_time_calculation.rdtscp_full_timestamp_counter_value - previous_time_calculation;
 
     printf("\033[38;2;255;0;0m========== Timer Results ==========\n\033[0m");
-    printf("\033[38;2;0;0;255mPrevious time calculation: %llu\n\033[0m", previous_time_calculation);
+    printf("\033[38;2;0;0;255mPrevious time calculation: %" PRIu64 "\n\033[0m",
+           previous_time_calculation);
     printf("\033[38;2;255;0;0m\nSubsequent time calculation:\n\033[0m");
-    printf("\033[38;2;0;0;255mCounter value = %llu\n\033[0m",
+    printf("\033[38;2;0;0;255mCounter value = %" PRIu64 "\n\033[0m",
            subsequent_time_calculation.rdtscp_full_timestamp_counter_value);
     printf("\033[38;2;0;0;255mTSC AUX Value = %u\n\033[0m",
            subsequent_time_calculation.rdtscp_tsc_aux);
 
-    printf("\033[38;2;0;255;0m\nResult diference = %llu\n\033[0m", result_diference);
+    printf("\033[38;2;0;255;0m\nResult diference = %" PRIu64 "\n\033[0m", result_diference);
 
     printf("\033[38;2;90;0;255m===================================================================="
            "=============================\n\033[0m");
 
-    // cache bypass test
-    int non_cached_write_variable;
-
+    // =============== CACHE BYPASS TEST ===============
     move_non_temporal_hint_movnti_instruction(&non_cached_write_variable, 50);
     store_fence_sfence_instruction();
 
+    cache_line_flush_optimized_clflushopt_instruction(&non_cached_write_variable);
+    store_fence_sfence_instruction();
+    load_fence_lfence_instruction();
+
+    volatile uint64_t clear_value = non_cached_write_variable;
+
     printf("\033[38;2;255;0;0m========== Cache Bypass Results  ==========\n\033[0m");
+
+    printf("\033[38;2;0;255;0mCache bypass completed successfully. Value read from RAM: %" PRIu64
+           "\n\033[0m",
+           clear_value);
 
     return ret;
 }
